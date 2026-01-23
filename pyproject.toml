@@ -6,7 +6,7 @@ description = ""
 authors = [
     { name = "Clemence Bouedo"},
     { name = " Victor Minot"},
-    
+
 ]
 requires-python = ">=3.10, <3.14"
 readme = "README.md"
