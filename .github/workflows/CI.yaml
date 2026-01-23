@@ -12,7 +12,8 @@ concurrency:
 env:
   FORCE_COLOR: "1" # Make tools pretty
 
-permissions: {}
+permissions:
+  contents: read
 
 on:
   push:
