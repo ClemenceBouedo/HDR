@@ -16,8 +16,8 @@ import cv2
 print("Done")
 #%% test : chargement d'une image HDR
 
-hdr = cv2.imread("memorial.hdr", cv2.IMREAD_UNCHANGED)
-print(hdr.dtype, hdr.min(), hdr.max())
+#hdr = cv2.imread("../../memorial.hdr", cv2.IMREAD_UNCHANGED)
+#print(hdr.dtype, hdr.min(), hdr.max())
 
 #%% fonctions de tone mapping bilatéral
 
@@ -223,7 +223,7 @@ def bilateral_tone_mapping(
 if __name__ == "__main__":
 
     # TODO : mettre le chemin vers votre radiance map HDR
-    hdr_path = "memorial.hdr"
+    hdr_path = "../memorial.hdr"
 
     hdr = load_hdr_image(hdr_path)
 
@@ -235,4 +235,5 @@ if __name__ == "__main__":
     )
 
     # Sauvegarde pour affichage
-    cv2.imwrite("output.png", (ldr * 255).astype(np.uint8))
+    cv2.imwrite(".\\output.png", (ldr * 255).astype(np.uint8))
+
