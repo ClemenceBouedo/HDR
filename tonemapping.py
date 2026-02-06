@@ -155,9 +155,9 @@ def compress_base_layer(base, desired_contrast):
 
 def bilateral_tone_mapping(
     hdr,
-    sigma_spatial=16.0,
-    sigma_range=2.0,
-    desired_contrast=30.0
+    sigma_spatial,
+    sigma_range,
+    desired_contrast
 ):
     """
     Applique le tone mapping bilatéral à une radiance map HDR
@@ -229,9 +229,9 @@ if __name__ == "__main__":
 
     ldr = bilateral_tone_mapping(
         hdr,
-        sigma_spatial=16.0,
-        sigma_range=0.9,
-        desired_contrast=30.0
+        sigma_spatial=2.0,
+        sigma_range=0.1,
+        desired_contrast=2.0
     )
 
     # Sauvegarde pour affichage
