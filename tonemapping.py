@@ -222,7 +222,7 @@ def bilateral_tone_mapping(
 
 if __name__ == "__main__":
 
-    # TODO : mettre le chemin vers votre radiance map HDR
+    # Test avec le HDR fourni par Debevec
     hdr_path = "../memorial.hdr"
 
     hdr = load_hdr_image(hdr_path)
@@ -230,10 +230,22 @@ if __name__ == "__main__":
     ldr = bilateral_tone_mapping(
         hdr,
         sigma_spatial=2.0,
-        sigma_range=0.1,
-        desired_contrast=2.0
+        sigma_range=1.5,
+        desired_contrast=4.0
     )
-
-    # Sauvegarde pour affichage
     cv2.imwrite(".\\output.png", (ldr * 255).astype(np.uint8))
+    print("✓ Memorial tonemapping saved: output.png")
 
+    # Test avec la radiance map créée dans scripts
+    hdr_path_scripts = ".\\scripts\\output_hdr.hdr"
+    hdr_scripts = load_hdr_image(hdr_path_scripts)
+    ldr_scripts = bilateral_tone_mapping(
+        hdr_scripts,
+        sigma_spatial=2.0,
+        sigma_range=1.5,
+        desired_contrast=4.0
+    )
+    cv2.imwrite(".\\output_scripts.png", (ldr_scripts * 255).astype(np.uint8))
+    print("✓ Scripts HDR tonemapping saved: output_scripts.png")
+
+#regarder : égalisation d'histogramme, balance des blancs !! pour éviter le rendu tableau
