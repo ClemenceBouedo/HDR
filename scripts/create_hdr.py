@@ -16,7 +16,7 @@ import imageio.v3 as imageio
 from debevec import hdr_debevec, save_hdr
 
 
-def load_exposure_sequence(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
+def load_exposure_sequence_memorial(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
     """
     Load a sequence of images with different exposures.
 
@@ -118,8 +118,7 @@ def main():
     print("=== HDR Image Creation using Debevec Algorithm ===\n")
 
     image_folder = "../images/memorial"
-    images, exposure_times = load_exposure_sequence(image_folder)
-
+    images, exposure_times = load_exposure_sequence_memorial(image_folder)
 
     # Create HDR image
     print("\nComputing HDR radiance map...")

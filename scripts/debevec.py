@@ -7,6 +7,48 @@ by Paul E. Debevec and Jitendra Malik, SIGGRAPH 1997
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
+
+
+def select_points_interactive(image: np.ndarray, num_samples: int) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Permet à l'utilisateur de sélectionner des points sur une image.
+    
+    Args:
+        image: Image sur laquelle sélectionner les points
+        num_samples: Nombre de points à sélectionner
+        
+    Returns:
+        sample_x: Coordonnées x des points sélectionnés
+        sample_y: Coordonnées y des points sélectionnés
+    """
+    selected_points = []
+    
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.imshow(image)
+    ax.set_title(f'Cliquez pour sélectionner {num_samples} points\n({len(selected_points)}/{num_samples} sélectionnés)')
+    
+    def onclick(event):
+        if event.inaxes == ax and len(selected_points) < num_samples:
+            x, y = int(event.xdata), int(event.ydata)
+            selected_points.append((x, y))
+            ax.plot(x, y, 'r+', markersize=10, markeredgewidth=2)
+            ax.set_title(f'Cliquez pour sélectionner {num_samples} points\n({len(selected_points)}/{num_samples} sélectionnés)')
+            fig.canvas.draw()
+            
+            if len(selected_points) >= num_samples:
+                print(f"{num_samples} points sélectionnés. Fermez la fenêtre pour continuer.")
+    
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    plt.show()
+    
+    if len(selected_points) < num_samples:
+        raise ValueError(f"Pas assez de points sélectionnés : {len(selected_points)}/{num_samples}")
+    
+    sample_x = np.array([p[0] for p in selected_points])
+    sample_y = np.array([p[1] for p in selected_points])
+    
+    return sample_x, sample_y
 
 
 def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -104,7 +146,7 @@ def hdr_debevec(
     images: list[np.ndarray],
     exposure_times: np.ndarray,
     lambda_smooth: float = 50.0,
-    num_samples: int = 100
+    num_samples: int = 10
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Create an HDR image using the Debevec and Malik algorithm.
@@ -113,8 +155,7 @@ def hdr_debevec(
         images: List of images with different exposures (assumed to be uint8)
         exposure_times: Array of exposure times for each image
         lambda_smooth: Smoothness parameter for the response curve (default: 50)
-        num_samples: Number of pixels to sample for computing response curve (default: 100)
-
+        num_samples: Number of pixels to sample for computing response curve (default: 10)
     Returns:
         hdr_image: The resulting HDR radiance map
         response_curve: The computed camera response function for each channel
@@ -130,11 +171,15 @@ def hdr_debevec(
     # Create weighting function
     w = np.array([weight_function(z) for z in range(n)])
 
-    # Sample pixels uniformly across the image
-    np.random.seed(42)
-    sample_indices = np.random.choice(height * width, size=num_samples, replace=False)
-    sample_y = sample_indices // width
-    sample_x = sample_indices % width
+    # Sélectionner l'image médiane pour l'échantillonnage
+    median_idx = num_images // 2
+    median_image = images[median_idx]
+    
+    # Sélection interactive des points
+    print(f"\nSélection de {num_samples} points sur l'image médiane (image {median_idx+1}/{num_images})")
+    print("Cliquez sur l'image pour sélectionner les points. Fermez la fenêtre quand terminé.")
+    
+    sample_x, sample_y = select_points_interactive(median_image, num_samples)
 
     # Initialize response curves and HDR image
     response_curves = []
@@ -199,3 +244,4 @@ def save_hdr(filename: str, hdr_image: np.ndarray) -> None:
     # Save as HDR
     cv2.imwrite(filename, hdr_bgr)
     print(f"HDR image saved: {filename}")
+
