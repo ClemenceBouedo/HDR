@@ -37,11 +37,11 @@ def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.nd
         lE: Array of shape (num_pixels,) where lE[i] is the log film irradiance
             at pixel location i
     """
-    n = 256
-    num_pixels = Z.shape[0]
-    num_images = Z.shape[1]
+    n = 256 #Nombre de niveaux de gris
+    num_pixels = Z.shape[0] # Nombre de pixels échantillonnés
+    num_images = Z.shape[1] # Nombre d'images
 
-    # Initialize the system of equations
+    # Initialisation du système d'équation
     A = np.zeros((num_pixels * num_images + n + 1, n + num_pixels))
     b = np.zeros((A.shape[0], 1))
 
@@ -85,7 +85,7 @@ def weight_function(z: int | np.ndarray, z_min: int = 0, z_max: int = 255) -> fl
     and less weight to extremely dark or bright pixels.
 
     Args:
-        z: Pixel value(s) (0-255)
+        z: Pixel value (0-255)
         z_min: Minimum pixel value (default: 0)
         z_max: Maximum pixel value (default: 255)
 
@@ -93,10 +93,10 @@ def weight_function(z: int | np.ndarray, z_min: int = 0, z_max: int = 255) -> fl
         Weight value(s) between 0 and 1
     """
     z_mid = (z_min + z_max) / 2
-    if isinstance(z, np.ndarray):
-        w = np.where(z <= z_mid, z - z_min, z_max - z)
+    if z <= z_mid:
+        w = z - z_min
     else:
-        w = z - z_min if z <= z_mid else z_max - z
+        w = z_max - z
     return w
 
 
@@ -122,12 +122,13 @@ def hdr_debevec(
     num_images = len(images)
     height, width = images[0].shape[:2]
     num_channels = images[0].shape[2] if len(images[0].shape) == 3 else 1
+    n = 256 #Nombre de niveaux de gris
 
     # Convert exposure times to log space
     B = np.log(exposure_times)
 
     # Create weighting function
-    w = np.array([weight_function(z) for z in range(256)])
+    w = np.array([weight_function(z) for z in range(n)])
 
     # Sample pixels uniformly across the image
     np.random.seed(42)
@@ -150,7 +151,7 @@ def hdr_debevec(
                 Z[:, j] = img[sample_y, sample_x, channel]
 
         # Solve for the response curve
-        g, _ = gsolve(Z, B, lambda_smooth, w)
+        g, lE = gsolve(Z, B, lambda_smooth, w)
         response_curves.append(g)
 
         # Reconstruct the HDR image for this channel
@@ -198,26 +199,3 @@ def save_hdr(filename: str, hdr_image: np.ndarray) -> None:
     # Save as HDR
     cv2.imwrite(filename, hdr_bgr)
     print(f"HDR image saved: {filename}")
-
-
-def tonemap_simple(hdr_image: np.ndarray, gamma: float = 2.2) -> np.ndarray:
-    """
-    Simple tonemapping using gamma correction.
-
-    Args:
-        hdr_image: HDR radiance map
-        gamma: Gamma value for correction (default: 2.2)
-
-    Returns:
-        8-bit LDR image
-    """
-    # Normalize to [0, 1]
-    normalized = hdr_image / np.max(hdr_image)
-
-    # Apply gamma correction
-    corrected = np.power(normalized, 1.0 / gamma)
-
-    # Convert to 8-bit
-    ldr_image = (corrected * 255).clip(0, 255).astype(np.uint8)
-
-    return ldr_image
