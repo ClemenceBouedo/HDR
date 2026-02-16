@@ -186,7 +186,9 @@ def hdr_debevec(
     hdr_image = np.zeros((height, width, num_channels))
 
     # Process each color channel
+
     for channel in range(num_channels):
+        print(f"\n[DEBUG] Traitement du canal {channel+1}/{num_channels}...")
         # Extract pixel values for sampled locations
         Z = np.zeros((num_samples, num_images), dtype=int)
         for j, img in enumerate(images):
@@ -195,12 +197,19 @@ def hdr_debevec(
             else:
                 Z[:, j] = img[sample_y, sample_x, channel]
 
+        print(f"[DEBUG] Extraction des valeurs d'échantillons pour le canal {channel+1} terminée.")
+
         # Solve for the response curve
+        print(f"[DEBUG] Calcul de la courbe de réponse pour le canal {channel+1}...")
         g, lE = gsolve(Z, B, lambda_smooth, w)
         response_curves.append(g)
+        print(f"[DEBUG] Courbe de réponse calculée pour le canal {channel+1}.")
 
         # Reconstruct the HDR image for this channel
+        print(f"[DEBUG] Reconstruction de l'image HDR pour le canal {channel+1}...")
         for y in range(height):
+            if y % max(1, height // 10) == 0:
+                print(f"[DEBUG]   Canal {channel+1}: {int(100*y/height)}% des lignes traitées...")
             for x in range(width):
                 # Get pixel values across all exposures
                 if num_channels == 1:
@@ -218,6 +227,7 @@ def hdr_debevec(
 
                 if denominator > 0:
                     hdr_image[y, x, channel] = np.exp(numerator / denominator)
+        print(f"[DEBUG] Canal {channel+1} terminé.")
 
     response_curves = np.array(response_curves).squeeze()
     hdr_image = hdr_image.squeeze()
