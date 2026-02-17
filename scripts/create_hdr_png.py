@@ -16,6 +16,7 @@ import imageio.v3 as imageio
 from debevec import hdr_debevec, save_hdr
 
 
+
 def load_exposure_sequence(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
     """
     Load a sequence of images with different exposures.
