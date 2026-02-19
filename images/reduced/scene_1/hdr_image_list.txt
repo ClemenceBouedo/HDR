@@ -1,0 +1,21 @@
+# Number of Images
+18
+# Filename  1/shutter_speed
+IMG_0374.png 4000.0
+IMG_0375.png 2500.0
+IMG_0376.png 1600.0
+IMG_0377.png 1000.0
+IMG_0378.png 640.0
+IMG_0379.png 400.0
+IMG_0380.png 250.0
+IMG_0381.png 160.0
+IMG_0382.png 100.0
+IMG_0383.png 60.0
+IMG_0384.png 40.0
+IMG_0385.png 25.0
+IMG_0386.png 15.0
+IMG_0387.png 10.0
+IMG_0388.png 6.0
+IMG_0389.png 4.0
+IMG_0390.png 2.5
+IMG_0391.png 1.6666666666666667

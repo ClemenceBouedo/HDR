@@ -13,7 +13,11 @@ readme = "README.md"
 dependencies = [
     "pandas[parquet]>=2,<3",
     "nicegui[native]>=2,<3",
-    "pyside6"
+    "pyside6",
+    "numpy>=1.20,<3",
+    "matplotlib>=3.5,<4",
+    "imageio>=2.31,<3",
+    "opencv-python>=4.5,<5"
 ]
 
 
