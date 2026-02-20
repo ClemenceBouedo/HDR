@@ -9,7 +9,7 @@ Entrée :
 Sortie :
 - Image LDR affichable (valeurs dans [0, 1])
 """
-
+import os
 import numpy as np
 import cv2
 
@@ -204,15 +204,69 @@ def bilateral_tone_mapping(
 
     ldr = np.stack([B_out, G_out, R_out], axis=2)
 
+    # --- 2. Balance des blancs Gray World
+    R_mean = R_out.mean()
+    G_mean = G_out.mean()
+    B_mean = B_out.mean()
+
+    mean_total = (R_out.mean() + G_out.mean() + B_out.mean() + B_out.mean()) / 3.0
+
+    k_R = mean_total / (R_out.mean() + epsilon)
+    k_G = mean_total / (G_out.mean() + epsilon)
+    k_B = mean_total / (B_out.mean() + epsilon)
+
+    R_out *= k_R
+    B_out *= k_B
+    G_out *= k_G
+
+    # --- 3. Normalisation globale via luminance
+    L_out_new = 0.2126 * R_out + 0.7152 * G_out + 0.0722 * B_out
+    scale = 1.0 / (np.percentile(L_out_new, 99.5) + epsilon)
+
+    R_out *= scale
+    G_out *= scale
+    B_out *= scale
+
+    # --- 4. Clip final et recomposition RGB
+    ldr = np.stack([B_out, G_out, R_out], axis=2)
+    ldr = np.clip(ldr, 0, 1)
+
+    # --- 5. Gamma
+    ldr = np.power(ldr, 1/2.2)
+
     # --- 7. Normalisation pour affichage (percentile)
     ldr = np.clip(ldr, 0, None)
 
     p = np.percentile(ldr, 99.5)
     ldr = np.clip(ldr / (p + 1e-6), 0, 1)
 
-    # gamma
-    ldr = np.power(ldr, 1/2.2)
+    return ldr
 
+# ==================================================
+# Méthode naïve : simple réduction de contraste
+# ==================================================
+def naive_contrast_reduction(hdr, factor):
+    """
+    Réduction naïve du contraste sur une image HDR.
+    Args:
+        hdr (np.ndarray): image HDR
+        factor (float): facteur de réduction du contraste
+    Returns:
+        ldr (np.ndarray): image LDR dans [0, 1]
+    """
+    epsilon = 1e-6
+    L, R, G, B = compute_luminance(hdr)
+    logL = np.log(L + epsilon)
+    logL_out = logL / factor
+    L_out = np.exp(logL_out)
+    R_out = (R / (L + epsilon)) * L_out
+    G_out = (G / (L + epsilon)) * L_out
+    B_out = (B / (L + epsilon)) * L_out
+    ldr = np.stack([B_out, G_out, R_out], axis=2)
+    ldr = np.clip(ldr, 0, None)
+    p = np.percentile(ldr, 99.5)
+    ldr = np.clip(ldr / (p + 1e-6), 0, 1)
+    ldr = np.power(ldr, 1/2.2)
     return ldr
 
 
@@ -221,31 +275,43 @@ def bilateral_tone_mapping(
 # ==================================================
 
 if __name__ == "__main__":
-
-    # Test avec le HDR fourni par Debevec
-    hdr_path = "../memorial.hdr"
-
-    hdr = load_hdr_image(hdr_path)
-
-    ldr = bilateral_tone_mapping(
-        hdr,
-        sigma_spatial=2.0,
+    # Traitement des deux images HDR avec sauvegarde explicite dans output_final
+    # 1. Image HDR fournie par Debevec
+    hdr_path_memorial = os.path.join("..", "memorial.hdr")
+    hdr_memorial = load_hdr_image(hdr_path_memorial)
+    ldr_memorial = bilateral_tone_mapping(
+        hdr_memorial,
+        sigma_spatial=3.0,
         sigma_range=1.5,
-        desired_contrast=4.0
+        desired_contrast=3.0
     )
-    cv2.imwrite(".\\output.png", (ldr * 255).astype(np.uint8))
-    print("✓ Memorial tonemapping saved: output.png")
+    out_path_memorial = os.path.join("output_final", "tonemapped_memorial.png")
+    cv2.imwrite(out_path_memorial, (ldr_memorial * 255).astype(np.uint8))
+    print(f" Tonemapping Memorial HDR sauvegardé : {out_path_memorial}")
+    
 
-    # Test avec la radiance map créée dans scripts
-    hdr_path_scripts = ".\\scripts\\output_hdr.hdr"
-    hdr_scripts = load_hdr_image(hdr_path_scripts)
-    ldr_scripts = bilateral_tone_mapping(
-        hdr_scripts,
-        sigma_spatial=2.0,
+    # 2. Image HDR générée par le script (output_hdr.hdr)
+    hdr_path_script = os.path.join("output_hdr", "saved", "scene_1", "output_hdr.hdr")
+    hdr_script = load_hdr_image(hdr_path_script)
+    ldr_script = bilateral_tone_mapping(
+        hdr_script,
+        sigma_spatial=3.0,
         sigma_range=1.5,
-        desired_contrast=4.0
+        desired_contrast=3.0
     )
-    cv2.imwrite(".\\output_scripts.png", (ldr_scripts * 255).astype(np.uint8))
-    print("✓ Scripts HDR tonemapping saved: output_scripts.png")
+    out_path_script = os.path.join("output_final", "tonemapped_scene1_output_hdr.png")
+    cv2.imwrite(out_path_script, (ldr_script * 255).astype(np.uint8))
+    print(f" Tonemapping output_hdr.hdr sauvegardé : {out_path_script}")
 
-#regarder : égalisation d'histogramme, balance des blancs !! pour éviter le rendu tableau
+    # Méthode naïve sur Memorial HDR
+    ldr_memorial_naive = naive_contrast_reduction(hdr_memorial, factor=5.0)
+    out_path_memorial_naive = os.path.join("output_final", "naive_memorial.png")
+    cv2.imwrite(out_path_memorial_naive, (ldr_memorial_naive * 255).astype(np.uint8))
+    print(f" Méthode naïve Memorial HDR sauvegardé : {out_path_memorial_naive}")
+
+    # Méthode naïve sur output_hdr.hdr (scene 1)
+    ldr_script_naive = naive_contrast_reduction(hdr_script, factor=5.0)
+    out_path_script_naive = os.path.join("output_final", "naive_script_output.png")
+    cv2.imwrite(out_path_script_naive, (ldr_script_naive * 255).astype(np.uint8))
+    print(f" Méthode naïve output_hdr.hdr sauvegardé : {out_path_script_naive}")
+
