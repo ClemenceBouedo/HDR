@@ -146,8 +146,9 @@ def hdr_debevec(
     images: list[np.ndarray],
     exposure_times: np.ndarray,
     lambda_smooth: float = 50.0,
-    num_samples: int = 10
-) -> tuple[np.ndarray, np.ndarray]:
+    num_samples: int = 10,
+    only_response_curves: bool = False
+) -> tuple[np.ndarray | None, np.ndarray]:
     """
     Create an HDR image using the Debevec and Malik algorithm.
 
@@ -156,8 +157,9 @@ def hdr_debevec(
         exposure_times: Array of exposure times for each image
         lambda_smooth: Smoothness parameter for the response curve (default: 50)
         num_samples: Number of pixels to sample for computing response curve (default: 10)
+        only_response_curves: Si True, ne calcule que les courbes de réponse (plus rapide)
     Returns:
-        hdr_image: The resulting HDR radiance map
+        hdr_image: The resulting HDR radiance map (ou None si only_response_curves)
         response_curve: The computed camera response function for each channel
     """
     num_images = len(images)
@@ -181,12 +183,11 @@ def hdr_debevec(
     
     sample_x, sample_y = select_points_interactive(median_image, num_samples)
 
-    # Initialize response curves and HDR image
+    # Initialisation des courbes de réponse
     response_curves = []
-    hdr_image = np.zeros((height, width, num_channels))
+    hdr_image = None if only_response_curves else np.zeros((height, width, num_channels))
 
     # Process each color channel
-
     for channel in range(num_channels):
         print(f"\n[DEBUG] Traitement du canal {channel+1}/{num_channels}...")
         # Extract pixel values for sampled locations
@@ -205,32 +206,34 @@ def hdr_debevec(
         response_curves.append(g)
         print(f"[DEBUG] Courbe de réponse calculée pour le canal {channel+1}.")
 
-        # Reconstruct the HDR image for this channel
-        print(f"[DEBUG] Reconstruction de l'image HDR pour le canal {channel+1}...")
-        for y in range(height):
-            if y % max(1, height // 10) == 0:
-                print(f"[DEBUG]   Canal {channel+1}: {int(100*y/height)}% des lignes traitées...")
-            for x in range(width):
-                # Get pixel values across all exposures
-                if num_channels == 1:
-                    pixel_values = np.array([img[y, x] for img in images])
-                else:
-                    pixel_values = np.array([img[y, x, channel] for img in images])
+        if not only_response_curves:
+            # Reconstruct the HDR image for this channel
+            print(f"[DEBUG] Reconstruction de l'image HDR pour le canal {channel+1}...")
+            for y in range(height):
+                if y % max(1, height // 10) == 0:
+                    print(f"[DEBUG]   Canal {channel+1}: {int(100*y/height)}% des lignes traitées...")
+                for x in range(width):
+                    # Get pixel values across all exposures
+                    if num_channels == 1:
+                        pixel_values = np.array([img[y, x] for img in images])
+                    else:
+                        pixel_values = np.array([img[y, x, channel] for img in images])
 
-                # Weighted average of log irradiance
-                numerator = 0.0
-                denominator = 0.0
-                for j, z in enumerate(pixel_values):
-                    wz = w[z]
-                    numerator += wz * (g[z] - B[j])
-                    denominator += wz
+                    # Weighted average of log irradiance
+                    numerator = 0.0
+                    denominator = 0.0
+                    for j, z in enumerate(pixel_values):
+                        wz = w[z]
+                        numerator += wz * (g[z] - B[j])
+                        denominator += wz
 
-                if denominator > 0:
-                    hdr_image[y, x, channel] = np.exp(numerator / denominator)
-        print(f"[DEBUG] Canal {channel+1} terminé.")
+                    if denominator > 0:
+                        hdr_image[y, x, channel] = np.exp(numerator / denominator)
+            print(f"[DEBUG] Canal {channel+1} terminé.")
 
     response_curves = np.array(response_curves).squeeze()
-    hdr_image = hdr_image.squeeze()
+    if not only_response_curves:
+        hdr_image = hdr_image.squeeze()
 
     return hdr_image, response_curves
 
