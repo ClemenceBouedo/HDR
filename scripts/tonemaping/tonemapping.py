@@ -14,10 +14,6 @@ import numpy as np
 import cv2
 
 print("Done")
-#%% test : chargement d'une image HDR
-
-#hdr = cv2.imread("../../memorial.hdr", cv2.IMREAD_UNCHANGED)
-#print(hdr.dtype, hdr.min(), hdr.max())
 
 #%% fonctions de tone mapping bilatéral
 
@@ -275,9 +271,9 @@ def naive_contrast_reduction(hdr, factor):
 # ==================================================
 
 if __name__ == "__main__":
-    # Traitement des deux images HDR avec sauvegarde explicite dans output_final
+    # Traitement des deux images HDR avec sauvegarde dans output_final
     # 1. Image HDR fournie par Debevec
-    hdr_path_memorial = os.path.join("..", "memorial.hdr")
+    hdr_path_memorial = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "memorial.hdr")
     hdr_memorial = load_hdr_image(hdr_path_memorial)
     ldr_memorial = bilateral_tone_mapping(
         hdr_memorial,
@@ -285,13 +281,13 @@ if __name__ == "__main__":
         sigma_range=1.5,
         desired_contrast=3.0
     )
-    out_path_memorial = os.path.join("output_final", "tonemapped_memorial.png")
+    out_path_memorial = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output_final", "tonemapped_memorial.png")
     cv2.imwrite(out_path_memorial, (ldr_memorial * 255).astype(np.uint8))
     print(f" Tonemapping Memorial HDR sauvegardé : {out_path_memorial}")
     
 
     # 2. Image HDR générée par le script (output_hdr.hdr)
-    hdr_path_script = os.path.join("output_hdr", "saved", "scene_1", "output_hdr.hdr")
+    hdr_path_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output_hdr", "saved", "scene_1", "output_hdr.hdr")
     hdr_script = load_hdr_image(hdr_path_script)
     ldr_script = bilateral_tone_mapping(
         hdr_script,
@@ -299,19 +295,19 @@ if __name__ == "__main__":
         sigma_range=1.5,
         desired_contrast=3.0
     )
-    out_path_script = os.path.join("output_final", "tonemapped_scene1_output_hdr.png")
+    out_path_script = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output_final", "tonemapped_scene1_output_hdr.png")
     cv2.imwrite(out_path_script, (ldr_script * 255).astype(np.uint8))
     print(f" Tonemapping output_hdr.hdr sauvegardé : {out_path_script}")
 
     # Méthode naïve sur Memorial HDR
     ldr_memorial_naive = naive_contrast_reduction(hdr_memorial, factor=5.0)
-    out_path_memorial_naive = os.path.join("output_final", "naive_memorial.png")
+    out_path_memorial_naive = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output_final", "naive_memorial.png")
     cv2.imwrite(out_path_memorial_naive, (ldr_memorial_naive * 255).astype(np.uint8))
     print(f" Méthode naïve Memorial HDR sauvegardé : {out_path_memorial_naive}")
 
     # Méthode naïve sur output_hdr.hdr (scene 1)
     ldr_script_naive = naive_contrast_reduction(hdr_script, factor=5.0)
-    out_path_script_naive = os.path.join("output_final", "naive_script_output.png")
+    out_path_script_naive = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "output_final", "naive_script_output.png")
     cv2.imwrite(out_path_script_naive, (ldr_script_naive * 255).astype(np.uint8))
     print(f" Méthode naïve output_hdr.hdr sauvegardé : {out_path_script_naive}")
 
