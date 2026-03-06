@@ -70,7 +70,7 @@ def compute_luminance(hdr):
 # 3. Filtrage bilatéral sur la log-luminance
 # ==================================================
 
-def compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments=16, downsample_factor):
+def compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments, downsample_factor):
     """
     Approximation du filtre bilatéral sur la log luminance selon Durand & Dorsey
     - segmentation en intensité
