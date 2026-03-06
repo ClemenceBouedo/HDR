@@ -13,14 +13,11 @@ import matplotlib.pyplot as plt
 def select_points_interactive(image: np.ndarray, num_samples: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Permet à l'utilisateur de sélectionner des points sur une image.
-    
     Args:
-        image: Image sur laquelle sélectionner les points
-        num_samples: Nombre de points à sélectionner
-        
+        image (np.ndarray): Image sur laquelle sélectionner les points.
+        num_samples (int): Nombre de points à sélectionner.
     Returns:
-        sample_x: Coordonnées x des points sélectionnés
-        sample_y: Coordonnées y des points sélectionnés
+        tuple[np.ndarray, np.ndarray]: Coordonnées x et y des points sélectionnés.
     """
     selected_points = []
     
@@ -53,31 +50,14 @@ def select_points_interactive(image: np.ndarray, num_samples: int) -> tuple[np.n
 
 def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    Solve for imaging system response function.
-
-    Given a set of pixel values observed for several pixels in several
-    images with different exposure times, this function returns the
-    imaging system's response function g as well as the log film irradiance
-    values for the observed pixels.
-
-    Assumes:
-        Zmin = 0
-        Zmax = 255
-
+    Résout la fonction de réponse du système d'imagerie.
     Args:
-        Z: Array of shape (num_pixels, num_images) where Z[i,j] is the pixel
-           value of pixel location number i in image j
-        B: Array of shape (num_images,) where B[j] is the log delta t,
-           or log shutter speed, for image j
-        l: Lambda, the constant that determines the amount of smoothness
-        w: Weighting function array of shape (256,) where w[z] is the
-           weighting function value for pixel value z
-
+        Z (np.ndarray): Valeurs de pixels pour plusieurs emplacements et images.
+        B (np.ndarray): Log des temps d'exposition pour chaque image.
+        l (float): Paramètre de lissage.
+        w (np.ndarray): Fonction de pondération pour chaque valeur de pixel.
     Returns:
-        g: Array of shape (256,) where g[z] is the log exposure corresponding
-           to pixel value z
-        lE: Array of shape (num_pixels,) where lE[i] is the log film irradiance
-            at pixel location i
+        tuple[np.ndarray, np.ndarray]: Courbe de réponse g et irradiance log lE.
     """
     n = 256 #Nombre de niveaux de gris
     num_pixels = Z.shape[0] # Nombre de pixels échantillonnés
@@ -121,18 +101,14 @@ def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.nd
 
 def weight_function(z: int | np.ndarray, z_min: int = 0, z_max: int = 255) -> float | np.ndarray:
     """
-    Weighting function for pixel values.
-
-    This function gives more weight to middle-range pixel values
-    and less weight to extremely dark or bright pixels.
-
+    Fonction de pondération pour les valeurs de pixels.
+    Donne plus de poids aux valeurs intermédiaires.
     Args:
-        z: Pixel value (0-255)
-        z_min: Minimum pixel value (default: 0)
-        z_max: Maximum pixel value (default: 255)
-
+        z (int | np.ndarray): Valeur(s) de pixel (0-255).
+        z_min (int): Valeur minimale (par défaut 0).
+        z_max (int): Valeur maximale (par défaut 255).
     Returns:
-        Weight value(s) between 0 and 1
+        float | np.ndarray: Valeur(s) de pondération.
     """
     z_mid = (z_min + z_max) / 2
     if z <= z_mid:
@@ -150,17 +126,15 @@ def hdr_debevec(
     only_response_curves: bool = False
 ) -> tuple[np.ndarray | None, np.ndarray]:
     """
-    Create an HDR image using the Debevec and Malik algorithm.
-
+    Crée une image HDR avec l'algorithme de Debevec et Malik.
     Args:
-        images: List of images with different exposures (assumed to be uint8)
-        exposure_times: Array of exposure times for each image
-        lambda_smooth: Smoothness parameter for the response curve (default: 50)
-        num_samples: Number of pixels to sample for computing response curve (default: 10)
-        only_response_curves: Si True, ne calcule que les courbes de réponse (plus rapide)
+        images (list[np.ndarray]): Liste d'images avec différents temps d'exposition.
+        exposure_times (np.ndarray): Tableau des temps d'exposition.
+        lambda_smooth (float): Paramètre de lissage pour la courbe de réponse.
+        num_samples (int): Nombre de pixels à échantillonner.
+        only_response_curves (bool): Si True, ne calcule que les courbes de réponse.
     Returns:
-        hdr_image: The resulting HDR radiance map (ou None si only_response_curves)
-        response_curve: The computed camera response function for each channel
+        tuple[np.ndarray | None, np.ndarray]: Image HDR et courbes de réponse.
     """
     num_images = len(images)
     height, width = images[0].shape[:2]
@@ -240,11 +214,12 @@ def hdr_debevec(
 
 def save_hdr(filename: str, hdr_image: np.ndarray) -> None:
     """
-    Save HDR image in Radiance RGBE format (.hdr).
-
+    Sauvegarde une image HDR au format Radiance RGBE (.hdr).
     Args:
-        filename: Output filename (should end with .hdr)
-        hdr_image: HDR radiance map
+        filename (str): Nom du fichier de sortie (.hdr).
+        hdr_image (np.ndarray): Carte de radiance HDR.
+    Returns:
+        None
     """
     import cv2
     

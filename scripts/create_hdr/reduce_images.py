@@ -1,6 +1,8 @@
+# Script pour réduire la taille des images et extraire les temps d'exposition
+# Ce script prend les images d'un dossier source, les réduit selon un facteur défini,
+
 import os
 from PIL import Image
-import json
 from PIL.ExifTags import TAGS
 
 # Répertoire source et destination
@@ -10,10 +12,15 @@ DEST_DIR = "../../images/reduced/scene_1"  # Dossier de sortie
 FACTOR = 4  # Facteur de réduction entier (ex: 2 = divise largeur et hauteur par 2)
 JPEG_QUALITY = 85  # Qualité JPEG
 
-os.makedirs(DEST_DIR, exist_ok=True)
-
 
 def get_exposure_time(img):
+    """
+    Extrait le temps d'exposition d'une image PIL.
+    Args:
+        img (Image.Image): Image PIL ouverte.
+    Returns:
+        float | str: L'inverse du temps d'exposition (1/shutter_speed) ou 'N/A' si non disponible.
+    """
     if hasattr(img, '_getexif') and img._getexif() is not None:
         for tag, value in img._getexif().items():
             tag_name = TAGS.get(tag, tag)
@@ -51,18 +58,28 @@ def get_exposure_time(img):
                     return 'N/A'
     return 'N/A'
 
-def reduce_image_size(input_path, output_path):
+def reduce_image_size(input_path, output_path, jpeg_quality=85, factor=4):
+    """
+    Réduit la taille d'une image et sauvegarde le résultat.
+    Args:
+        input_path (str): Chemin de l'image source.
+        output_path (str): Chemin de l'image réduite.
+        jpeg_quality (int): Qualité JPEG.
+        factor (int): Facteur de réduction.
+    Returns:
+        float | str: L'inverse du temps d'exposition (1/shutter_speed) ou 'N/A'.
+    """
     with Image.open(input_path) as img:
         exposure = get_exposure_time(img)
         # Calculer la nouvelle taille selon le facteur
-        new_width = img.width // FACTOR
-        new_height = img.height // FACTOR
+        new_width = img.width // factor
+        new_height = img.height // factor
         img = img.resize((new_width, new_height), Image.LANCZOS)
         ext = os.path.splitext(output_path)[1].lower()
         if ext == '.png':
             img.save(output_path, format='PNG')
         else:
-            quality = JPEG_QUALITY
+            quality = jpeg_quality
             save_kwargs = {'format': 'JPEG', 'quality': quality}
             exif = img.info.get('exif')
             if exif:
@@ -70,24 +87,39 @@ def reduce_image_size(input_path, output_path):
             img.save(output_path, **save_kwargs)
         return exposure
 
-if __name__ == "__main__":
+def reduce_images(source_dir, dest_dir, jpeg_quality=85, factor=4):
+    """
+    Réduit toutes les images d'un dossier source et sauvegarde les temps d'exposition dans un fichier txt.
+    Args:
+        source_dir (str): Dossier source.
+        dest_dir (str): Dossier de destination.
+        jpeg_quality (int): Qualité JPEG.
+        factor (int): Facteur de réduction.
+    Returns:
+        None
+    """
+    os.makedirs(dest_dir, exist_ok=True)
     exposures = []
-    for filename in os.listdir(SOURCE_DIR):
+    for filename in os.listdir(source_dir):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
-            input_path = os.path.join(SOURCE_DIR, filename)
+            input_path = os.path.join(source_dir, filename)
             # Choisir l'extension de sortie : .jpg ou .png
             # Pour PNG, changez l'extension ci-dessous
             output_ext = ".png"  # ou ".jpg"
-            output_path = os.path.join(DEST_DIR, os.path.splitext(filename)[0] + output_ext)
-            exposure = reduce_image_size(input_path, output_path)
+            output_path = os.path.join(dest_dir, os.path.splitext(filename)[0] + output_ext)
+            exposure = reduce_image_size(input_path, output_path, jpeg_quality, factor)
             exposures.append((os.path.basename(output_path), exposure))
             print(f"Image traitée : {output_path} ({os.path.getsize(output_path)//1024} Ko)")
     # Sauvegarder dans un fichier TXT au format hdr_image_list.txt
     if exposures:
-        global_txt_path = os.path.join(DEST_DIR, "hdr_image_list.txt")
+        global_txt_path = os.path.join(dest_dir, "hdr_image_list.txt")
         with open(global_txt_path, 'w', encoding='utf-8') as f:
             f.write(f"# Number of Images\n{len(exposures)}\n")
             f.write("# Filename  1/shutter_speed\n")
             for img_name, exposure in exposures:
                 if exposure != 'N/A':
                     f.write(f"{img_name} {exposure}\n")
+
+if __name__ == "__main__":
+    reduce_images(SOURCE_DIR, DEST_DIR, jpeg_quality=JPEG_QUALITY, factor=FACTOR)
+    

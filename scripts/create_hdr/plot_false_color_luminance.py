@@ -7,12 +7,13 @@ def plot_false_color_luminance(hdr_path: str, channel: str = 'all', cmap: str = 
     Affiche et enregistre une carte de luminance en fausses couleurs à partir d'un fichier .hdr.
     Peut afficher chaque canal ("r", "g", "b") ou la luminance globale ("all" ou "luminance").
     L'échelle colorée est en log10.
-
     Args:
-        hdr_path: Chemin du fichier .hdr
-        channel: 'r', 'g', 'b', ou 'all'/'luminance' (par défaut)
-        cmap: Colormap matplotlib à utiliser (par défaut 'jet')
-        save_path: Chemin du fichier de sortie (PNG, optionnel)
+        hdr_path (str): Chemin du fichier .hdr.
+        channel (str): 'r', 'g', 'b', ou 'all'/'luminance' (par défaut).
+        cmap (str): Colormap matplotlib à utiliser (par défaut 'jet').
+        save_path (str | None): Chemin du fichier de sortie (PNG, optionnel).
+    Returns:
+        None
     """
     hdr = cv2.imread(hdr_path, cv2.IMREAD_UNCHANGED)
     if hdr is None:
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     # À personnaliser : chemins d'entrée et de sortie
     hdr_path = "../../output_hdr/saved/scene_1/output_hdr.hdr"  # Chemin du fichier HDR à afficher
     cmap = "jet"      # Colormap matplotlib
-    output_dir = "../../output_hdr/saved/scene_1/"  # Dossier de sauvegarde
+    output_dir = "../../output_hdr/saved/scene_1/test"  # Dossier de sauvegarde
 
     for channel in ["r", "g", "b", "all"]:
         if channel == "all":

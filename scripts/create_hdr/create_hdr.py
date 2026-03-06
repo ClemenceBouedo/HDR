@@ -6,9 +6,9 @@ Paramètres utilisateurs configurables ci-dessous.
 
 # === PARAMÈTRES UTILISATEUR ===
 # Type d'images à charger : 'png' ou 'jpg'
-MODE = 'png'  # 'png' ou 'jpg'
+MODE = 'png'  # Choisir 'png' ou 'jpg'
 # Calculer uniquement les courbes de réponse (True = plus rapide, pas de HDR)
-ONLY_RESPONSE_CURVES = True
+ONLY_RESPONSE_CURVES = False
 # Chemin du dossier d'entrée (images)
 IMAGE_FOLDER_PNG = "../../images/reduced/scene_1"
 IMAGE_FOLDER_JPG = "../../images/Images_supop/Scène 1"
@@ -33,6 +33,10 @@ from debevec import hdr_debevec, save_hdr
 def load_exposure_sequence_png(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
     """
     Charge une séquence d'images PNG (ou PPM) et les temps d'exposition depuis un fichier texte.
+    Args:
+        image_folder (str | Path): Dossier contenant les images et le fichier hdr_image_list.txt.
+    Returns:
+        tuple[list[np.ndarray], np.ndarray]: Liste des images et tableau des temps d'exposition.
     """
     image_folder = Path(image_folder)
     hdr_list_file = image_folder / "hdr_image_list.txt"
@@ -71,6 +75,10 @@ def load_exposure_sequence_png(image_folder: str | Path) -> tuple[list[np.ndarra
 def load_exposure_sequence_jpg(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
     """
     Charge toutes les images JPG d'un dossier et récupère le temps d'exposition depuis les EXIF.
+    Args:
+        image_folder (str | Path): Dossier contenant les images JPG.
+    Returns:
+        tuple[list[np.ndarray], np.ndarray]: Liste des images et tableau des temps d'exposition.
     """
     image_folder = Path(image_folder)
     image_files = sorted([f for f in image_folder.iterdir() if f.suffix.lower() in ['.jpg', '.jpeg']])
@@ -107,6 +115,14 @@ def load_exposure_sequence_jpg(image_folder: str | Path) -> tuple[list[np.ndarra
     return images, exposure_times
 
 def plot_response_curves(response_curves: np.ndarray, save_path: str | None = None) -> None:
+    """
+    Affiche et sauvegarde les courbes de réponse de la caméra.
+    Args:
+        response_curves (np.ndarray): Tableau des courbes de réponse.
+        save_path (str | None): Chemin de sauvegarde de l'image (optionnel).
+    Returns:
+        None
+    """
     # Courbe classique : g(Z) en fonction de Z
     plt.figure(figsize=(10, 6))
     if response_curves.ndim == 1:
@@ -147,6 +163,11 @@ def plot_response_curves(response_curves: np.ndarray, save_path: str | None = No
     plt.show()
 
 def main():
+    """
+    Fonction principale pour la création d'une image HDR et le tracé des courbes de réponse.
+    Returns:
+        None
+    """
     print("=== HDR Image Creation using Debevec Algorithm ===\n")
 
     if MODE == 'png':
