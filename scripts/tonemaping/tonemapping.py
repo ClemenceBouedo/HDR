@@ -72,10 +72,19 @@ def compute_luminance(hdr):
 
 def compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments=16, downsample_factor=2):
     """
-    Approximation du filtre bilatéral selon Durand & Dorsey
+    Approximation du filtre bilatéral sur la log luminance selon Durand & Dorsey
     - segmentation en intensité
     - filtrage spatial sur chaque segment
     - interpolation
+    
+    Args:
+        logL: log-luminance (H, W)
+        sigma_spatial: lissage spatial
+        sigma_range: lissage intensité
+        nb_segments: nombre de segments
+        downsample_factor: facteur de sous-échantillonnage
+    Returns:
+        base: couche de base lissée (H, W)
     """
 
     # 1) downsample spatial
@@ -133,10 +142,6 @@ def compress_base_layer(base, desired_contrast):
     base_min = base.min()
     base_max = base.max()
 
-    # TODO :
-    # - calculer le facteur de compression
-    # - appliquer la compression de Durand & Dorsey
-
     contrast = base_max - base_min
     factor = contrast / desired_contrast
 
@@ -169,7 +174,7 @@ def bilateral_tone_mapping(
     """
     epsilon = 1e-6
 
-    # --- 1. Luminance
+    # Luminance
     L, R, G, B = compute_luminance(hdr)
     print("Luminance stats :")
     print(" min:", L.min())
@@ -179,28 +184,28 @@ def bilateral_tone_mapping(
     print(" std:", L.std())
     print(" % pixels > 1:", np.mean(L > 1) * 100)
 
-    # --- 2. Passage en log
+    # Passage en log
     logL = np.log(L + epsilon)
 
-    # --- 3. Décomposition base / détail
+    # Décomposition base / détail
     base = compute_base_layer(logL, sigma_spatial, sigma_range)
     detail = logL - base
 
-    # --- 4. Compression de la base
+    # Compression de la base
     base_compressed = compress_base_layer(base, desired_contrast)
 
-    # --- 5. Reconstruction de la luminance
+    # Reconstruction de la luminance
     logL_out = base_compressed + detail
     L_out = np.exp(logL_out)
 
-    # --- 6. Recomposition couleur
+    # Recomposition couleur
     R_out = (R / (L + epsilon)) * L_out
     G_out = (G / (L + epsilon)) * L_out
     B_out = (B / (L + epsilon)) * L_out
 
     ldr = np.stack([B_out, G_out, R_out], axis=2)
 
-    # --- 2. Balance des blancs Gray World
+    # Balance des blancs Gray World
     R_mean = R_out.mean()
     G_mean = G_out.mean()
     B_mean = B_out.mean()
@@ -215,7 +220,7 @@ def bilateral_tone_mapping(
     B_out *= k_B
     G_out *= k_G
 
-    # --- 3. Normalisation globale via luminance
+    # Normalisation globale via luminance
     L_out_new = 0.2126 * R_out + 0.7152 * G_out + 0.0722 * B_out
     scale = 1.0 / (np.percentile(L_out_new, 99.5) + epsilon)
 
@@ -223,14 +228,14 @@ def bilateral_tone_mapping(
     G_out *= scale
     B_out *= scale
 
-    # --- 4. Clip final et recomposition RGB
+    # Clip final et recomposition RGB
     ldr = np.stack([B_out, G_out, R_out], axis=2)
     ldr = np.clip(ldr, 0, 1)
 
-    # --- 5. Gamma
+    # Gamma
     ldr = np.power(ldr, 1/2.2)
 
-    # --- 7. Normalisation pour affichage (percentile)
+    # Normalisation pour affichage (percentile)
     ldr = np.clip(ldr, 0, None)
 
     p = np.percentile(ldr, 99.5)
@@ -266,13 +271,10 @@ def naive_contrast_reduction(hdr, factor):
     return ldr
 
 
-# ==================================================
-# 6. Programme principal (test)
-# ==================================================
 
 if __name__ == "__main__":
     # Traitement des deux images HDR avec sauvegarde dans output_final
-    # 1. Image HDR fournie par Debevec
+    # 1. Image fournie par Debevec
     hdr_path_memorial = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "memorial.hdr")
     hdr_memorial = load_hdr_image(hdr_path_memorial)
     ldr_memorial = bilateral_tone_mapping(
