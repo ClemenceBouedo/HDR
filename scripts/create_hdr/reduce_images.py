@@ -4,8 +4,8 @@ import json
 from PIL.ExifTags import TAGS
 
 # Répertoire source et destination
-SOURCE_DIR = "../images/Images_supop/Scène 1"  # À adapter selon votre dossier
-DEST_DIR = "../images/reduced/scene_1"  # Dossier de sortie
+SOURCE_DIR = "../../images/Images_supop/Scène 1"  # À adapter selon votre dossier
+DEST_DIR = "../../images/reduced/scene_1"  # Dossier de sortie
 
 FACTOR = 4  # Facteur de réduction entier (ex: 2 = divise largeur et hauteur par 2)
 JPEG_QUALITY = 85  # Qualité JPEG

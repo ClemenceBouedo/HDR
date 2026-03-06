@@ -6,12 +6,12 @@ Paramètres utilisateurs configurables ci-dessous.
 
 # === PARAMÈTRES UTILISATEUR ===
 # Type d'images à charger : 'png' ou 'jpg'
-MODE = 'png'  # ou 'jpg'
+MODE = 'png'  # 'png' ou 'jpg'
 # Calculer uniquement les courbes de réponse (True = plus rapide, pas de HDR)
 ONLY_RESPONSE_CURVES = True
 # Chemin du dossier d'entrée (images)
-IMAGE_FOLDER_PNG = "../images/reduced/scene_1"
-IMAGE_FOLDER_JPG = "../images/Images_supop/Scène 1"
+IMAGE_FOLDER_PNG = "../../images/reduced/scene_1"
+IMAGE_FOLDER_JPG = "../../images/Images_supop/Scène 1"
 # Chemin de sauvegarde des courbes de réponse
 RESPONSE_CURVE_PATH = 'response_curves.png'
 # Chemin de sauvegarde du fichier HDR

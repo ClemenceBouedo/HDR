@@ -49,9 +49,9 @@ def plot_false_color_luminance(hdr_path: str, channel: str = 'all', cmap: str = 
 
 if __name__ == "__main__":
     # À personnaliser : chemins d'entrée et de sortie
-    hdr_path = "../output/saved/scene_1/output_hdr.hdr"  # Chemin du fichier HDR à afficher
+    hdr_path = "../../output_hdr/saved/scene_1/output_hdr.hdr"  # Chemin du fichier HDR à afficher
     cmap = "jet"      # Colormap matplotlib
-    output_dir = "../output/saved/scene_1/"  # Dossier de sauvegarde
+    output_dir = "../../output_hdr/saved/scene_1/"  # Dossier de sauvegarde
 
     for channel in ["r", "g", "b", "all"]:
         if channel == "all":
