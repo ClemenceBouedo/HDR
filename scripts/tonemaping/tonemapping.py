@@ -70,13 +70,13 @@ def compute_luminance(hdr):
 # 3. Filtrage bilatéral sur la log-luminance
 # ==================================================
 
-def compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments=16, downsample_factor=2):
+def compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments=16, downsample_factor):
     """
     Approximation du filtre bilatéral sur la log luminance selon Durand & Dorsey
     - segmentation en intensité
     - filtrage spatial sur chaque segment
     - interpolation
-    
+
     Args:
         logL: log-luminance (H, W)
         sigma_spatial: lissage spatial
@@ -188,7 +188,7 @@ def bilateral_tone_mapping(
     logL = np.log(L + epsilon)
 
     # Décomposition base / détail
-    base = compute_base_layer(logL, sigma_spatial, sigma_range)
+    base = compute_base_layer(logL, sigma_spatial, sigma_range, nb_segments=16, downsample_factor=2)
     detail = logL - base
 
     # Compression de la base
