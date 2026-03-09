@@ -1,11 +1,55 @@
 
-## HDR
 
-Ce projet permet de manipuler et traiter des images à grande gamme dynamique (HDR) à partir de séquences d’images classiques (PNG ou JPG). Il a été initialisé avec le template [supopo-pai-cookiecutter-template](https://github.com/ClementPinard/supop-pai-cookiecuttter-template/tree/main).
+# HDR
+
+Ce projet permet de manipuler et traiter des images à grande gamme dynamique (HDR) à partir de séquences d’images classiques (PNG ou JPG).
+
+Il a été initialisé avec le template [supopo-pai-cookiecutter-template](https://github.com/ClementPinard/supop-pai-cookiecuttter-template/tree/main).
 
 ### Généralités
 
 L’imagerie HDR vise à capturer et restituer toute la dynamique lumineuse d’une scène, là où une image classique ne peut représenter que des valeurs limitées. Ce projet propose des outils pour créer des fichiers HDR à partir de photos prises avec différents temps d’exposition, puis pour les convertir en images LDR (Low Dynamic Range) affichables tout en préservant les détails.
+
+## Mode d'emploi
+
+Voici les principales étapes pour utiliser ce projet :
+
+1. **Réduction de taille des images**
+	 - Utilisez le script `reduce_images.py` pour réduire la taille des images sources (PNG ou JPG) si nécessaire.
+	- Un fichier texte contenant les temps d'exposition est créé lors de la conversion de JPG en PNG.
+	 - Paramétrez le dossier source, le dossier de destination, le facteur de réduction et le format de sortie en haut du script.
+	 - Lancez la commande :
+		 ```bash
+		 uv run reduce_images
+		 ```
+
+2. **Création du fichier HDR**
+	 - Utilisez le script `create_hdr.py` pour générer le fichier HDR à partir des images réduites et du fichier des temps d’exposition (si images PNG)
+	 - Adaptez les paramètres en haut du script selon votre séquence.
+	 - Lancez la commande :
+		 ```bash
+		 uv run create_hdr
+		 ```
+
+3. **Visualisation en fausses couleurs**
+	 - Le script `plot_false_color_luminance.py` permet d’afficher et sauvegarder une carte de luminance en fausses couleurs (échelle log10, colormap personnalisable).
+	 - Modifiez les chemins et paramètres en haut du script.
+	 - Lancez la commande :
+		 ```bash
+		 uv run plot_false_color_luminance
+		 ```
+
+4. **Tonemapping (conversion HDR → LDR)**
+	 - Utilisez le script `tonemapping.py` pour convertir le fichier HDR en image LDR affichable.
+	 - Les paramètres du tone mapping (sigma_spatial, sigma_range, desired_contrast, etc.) sont en haut du script.
+	 - Lancez la commande :
+		 ```bash
+		 uv run tonemapping
+		 ```
+
+Chaque script peut être adapté en modifiant les paramètres en haut du fichier. Les chemins sont calculés automatiquement à partir de la racine du projet.
+
+---
 
 ## Création du fichier HDR
 
