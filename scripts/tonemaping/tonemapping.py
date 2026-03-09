@@ -272,7 +272,10 @@ def naive_contrast_reduction(hdr, factor):
 
 
 
-if __name__ == "__main__":
+
+
+
+def main():
     # Traitement des deux images HDR avec sauvegarde dans output_final
     # 1. Image fournie par Debevec
     hdr_path_memorial = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "memorial.hdr")
@@ -313,3 +316,4 @@ if __name__ == "__main__":
     cv2.imwrite(out_path_script_naive, (ldr_script_naive * 255).astype(np.uint8))
     print(f" Méthode naïve output_hdr.hdr sauvegardé : {out_path_script_naive}")
 
+if __name__ == "__main__":    main()

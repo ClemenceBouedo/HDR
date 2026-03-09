@@ -22,8 +22,10 @@ dependencies = [
 
 
 [project.scripts]
-main_ng = "HDR.main_nicegui:run"
-main_qt = "HDR.main_qt:run"
+reduce_images = "scripts.create_hdr.reduce_images:reduce_images"
+false_color = "scripts.create_hdr.plot_false_color_luminance:main"
+create_hdr = "scripts.create_hdr.create_hdr:create_hdr"
+tonemapping = "scripts.tonemapping.tonemapping:main"
 
 [dependency-groups]
 test = [
@@ -52,10 +54,10 @@ default-groups = [
 ]
 
 [tool.hatch.build.targets.sdist]
-include = ["HDR"]
+include = ["scripts"]
 
 [tool.hatch.build.targets.wheel]
-include = ["HDR"]
+include = ["scripts"]
 
 [build-system]
 requires = ["hatchling"]

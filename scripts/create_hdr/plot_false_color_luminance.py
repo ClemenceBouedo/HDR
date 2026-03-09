@@ -1,6 +1,18 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+
+# === PARAMÈTRES UTILISATEUR ===
+HDR_PATH = "output_hdr/saved/scene_1/output_hdr.hdr"  # Chemin du fichier HDR à afficher (relatif à la racine)
+CMAP = "jet"      # Colormap matplotlib
+OUTPUT_DIR = "output_hdr/saved/scene_1/test/"  # Dossier de sauvegarde (relatif à la racine)
+from pathlib import Path
+import os
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+HDR_PATH_ABS = PROJECT_ROOT / HDR_PATH
+OUTPUT_DIR_ABS = PROJECT_ROOT / OUTPUT_DIR
+# =============================
 
 def plot_false_color_luminance(hdr_path: str, channel: str = 'all', cmap: str = 'jet', save_path: str = None) -> None:
     """
@@ -48,17 +60,18 @@ def plot_false_color_luminance(hdr_path: str, channel: str = 'all', cmap: str = 
     plt.show()
 
 
-if __name__ == "__main__":
-    # À personnaliser : chemins d'entrée et de sortie
-    hdr_path = "../../output_hdr/saved/scene_1/output_hdr.hdr"  # Chemin du fichier HDR à afficher
-    cmap = "jet"      # Colormap matplotlib
-    output_dir = "../../output_hdr/saved/scene_1/test"  # Dossier de sauvegarde
-
+def main():
+    """Affiche et sauvegarde des cartes de luminance en fausses couleurs pour les canaux R, G, B et la luminance globale.  
+    Les images sont affichées en échelle log10 et sauvegardées au format PNG.
+    """
     for channel in ["r", "g", "b", "all"]:
         if channel == "all":
             suffix = "luminance"
         else:
             suffix = channel
-        save_path = f"{output_dir}false_color_{suffix}.png"
+        save_path = OUTPUT_DIR_ABS / f"false_color_{suffix}.png"
         print(f"Génération de la carte pour le canal : {channel}")
-        plot_false_color_luminance(hdr_path, channel=channel, cmap=cmap, save_path=save_path)
+        plot_false_color_luminance(HDR_PATH_ABS, channel=channel, cmap=CMAP, save_path=save_path)
+
+if __name__ == "__main__":
+    main()

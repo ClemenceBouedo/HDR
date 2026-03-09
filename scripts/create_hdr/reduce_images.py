@@ -1,16 +1,28 @@
-# Script pour réduire la taille des images et extraire les temps d'exposition
-# Ce script prend les images d'un dossier source, les réduit selon un facteur défini,
+"""Script pour réduire la taille des images et extraire les temps d'exposition
+   Ce script prend les images d'un dossier source, les réduit selon un facteur défini,
+   et sauvegarde les images réduites dans un dossier de destination.
+   Les images d'entrée peuvent être au format JPEG ou PNG, et les images de sortie peuvent être enregistrées dans le même format ou converties en PNG.
+   Le script gère les métadonnées EXIF pour extraire les temps d'exposition et peut conserver ces métadonnées dans les images réduites (si JPEG en sortie) ou les enregistre dans le fichier textedans un fichier texte (si PNG en sortie).
+"""
 
 import os
 from PIL import Image
 from PIL.ExifTags import TAGS
 
 # Répertoire source et destination
-SOURCE_DIR = "../../images/Images_supop/Scène 1"  # À adapter selon votre dossier
-DEST_DIR = "../../images/reduced/scene_1"  # Dossier de sortie
+SOURCE_DIR = "images/Images_supop/Scène 1"  # Dossier d'entrée (relatif à la racine)
+DEST_DIR = "images/reduced/scene_1"  # Dossier de sortie (relatif à la racine)
+from pathlib import Path
+import os
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+SOURCE_DIR_ABS = PROJECT_ROOT / SOURCE_DIR
+DEST_DIR_ABS = PROJECT_ROOT / DEST_DIR
+
 
 FACTOR = 4  # Facteur de réduction entier (ex: 2 = divise largeur et hauteur par 2)
 JPEG_QUALITY = 85  # Qualité JPEG
+# Choix du format de sortie :
+OUTPUT_FORMAT = 'png'  # 'png' ou 'jpg'
 
 
 def get_exposure_time(img):
@@ -103,9 +115,8 @@ def reduce_images(source_dir, dest_dir, jpeg_quality=85, factor=4):
     for filename in os.listdir(source_dir):
         if filename.lower().endswith((".jpg", ".jpeg", ".png")):
             input_path = os.path.join(source_dir, filename)
-            # Choisir l'extension de sortie : .jpg ou .png
-            # Pour PNG, changez l'extension ci-dessous
-            output_ext = ".png"  # ou ".jpg"
+            # Utilise le paramètre OUTPUT_FORMAT pour choisir l'extension
+            output_ext = f'.{OUTPUT_FORMAT}'
             output_path = os.path.join(dest_dir, os.path.splitext(filename)[0] + output_ext)
             exposure = reduce_image_size(input_path, output_path, jpeg_quality, factor)
             exposures.append((os.path.basename(output_path), exposure))

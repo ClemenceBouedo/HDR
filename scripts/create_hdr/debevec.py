@@ -1,9 +1,9 @@
 """
-Implementation of the Debevec and Malik HDR algorithm.
+Implémentation de l'algorithme HDR de Debevec et Malik.
 
-Based on the paper:
+Basé sur l'article :
 "Recovering High Dynamic Range Radiance Maps from Photographs"
-by Paul E. Debevec and Jitendra Malik, SIGGRAPH 1997
+par Paul E. Debevec et Jitendra Malik, SIGGRAPH 1997
 """
 
 import numpy as np
@@ -52,22 +52,22 @@ def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.nd
     """
     Résout la fonction de réponse du système d'imagerie.
     Args:
-        Z (np.ndarray): Valeurs de pixels pour plusieurs emplacements et images.
+        Z (np.ndarray): Valeurs des pixels sélectionnés pour chaque image (num_samples x num_images).
         B (np.ndarray): Log des temps d'exposition pour chaque image.
         l (float): Paramètre de lissage.
         w (np.ndarray): Fonction de pondération pour chaque valeur de pixel.
     Returns:
-        tuple[np.ndarray, np.ndarray]: Courbe de réponse g et irradiance log lE.
+        tuple[np.ndarray, np.ndarray]: Courbe de réponse et log de l'éclairement lE de chaque pixel sélectionné.
     """
-    n = 256 #Nombre de niveaux de gris
+    n = 256 # Nombre de niveaux de gris
     num_pixels = Z.shape[0] # Nombre de pixels échantillonnés
     num_images = Z.shape[1] # Nombre d'images
 
-    # Initialisation du système d'équation
+    # Initialisation du système d'équations
     A = np.zeros((num_pixels * num_images + n + 1, n + num_pixels))
     b = np.zeros((A.shape[0], 1))
 
-    # Include the data-fitting equations
+    # Ajout des équations sur les valeurs des pixels
     k = 0
     for i in range(num_pixels):
         for j in range(num_images):
@@ -78,21 +78,21 @@ def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.nd
             b[k, 0] = wij * B[j]
             k += 1
 
-    # Fix the curve by setting its middle value to 0
+    # Fixer la courbe en imposant la valeur du milieu à 0
     A[k, 128] = 1
     k += 1
 
-    # Include the smoothness equations
+    # Ajout des équations de lissage
     for i in range(n - 2):
         A[k, i] = l * w[i + 1]
         A[k, i + 1] = -2 * l * w[i + 1]
         A[k, i + 2] = l * w[i + 1]
         k += 1
 
-    # Solve the system using least squares
+    # Résolution du système par moindres carrés
     x = np.linalg.lstsq(A, b, rcond=None)[0]
 
-    # Extract the response curve and irradiance values
+    # Extraction de la courbe de réponse et des valeurs d'éclairement
     g = x[:n].flatten()
     lE = x[n:].flatten()
 
@@ -102,9 +102,9 @@ def gsolve(Z: np.ndarray, B: np.ndarray, l: float, w: np.ndarray) -> tuple[np.nd
 def weight_function(z: int | np.ndarray, z_min: int = 0, z_max: int = 255) -> float | np.ndarray:
     """
     Fonction de pondération pour les valeurs de pixels.
-    Donne plus de poids aux valeurs intermédiaires.
+    Donne plus de poids aux valeurs intermédiaires, les plus exploitables pour la reconstruction HDR.
     Args:
-        z (int | np.ndarray): Valeur(s) de pixel (0-255).
+        z (int | np.ndarray): Valeur(s) de pixel (0-255), dynamique de l'image de départ.
         z_min (int): Valeur minimale (par défaut 0).
         z_max (int): Valeur maximale (par défaut 255).
     Returns:
@@ -132,7 +132,7 @@ def hdr_debevec(
         exposure_times (np.ndarray): Tableau des temps d'exposition.
         lambda_smooth (float): Paramètre de lissage pour la courbe de réponse.
         num_samples (int): Nombre de pixels à échantillonner.
-        only_response_curves (bool): Si True, ne calcule que les courbes de réponse.
+        only_response_curves (bool): Si True, ne calcule que les courbes de réponse pour aller plus vite.
     Returns:
         tuple[np.ndarray | None, np.ndarray]: Image HDR et courbes de réponse.
     """
@@ -141,10 +141,10 @@ def hdr_debevec(
     num_channels = images[0].shape[2] if len(images[0].shape) == 3 else 1
     n = 256 #Nombre de niveaux de gris
 
-    # Convert exposure times to log space
+    # Conversion des temps d'exposition en log
     B = np.log(exposure_times)
 
-    # Create weighting function
+    # Création de la fonction de pondération
     w = np.array([weight_function(z) for z in range(n)])
 
     # Sélectionner l'image médiane pour l'échantillonnage
@@ -161,10 +161,10 @@ def hdr_debevec(
     response_curves = []
     hdr_image = None if only_response_curves else np.zeros((height, width, num_channels))
 
-    # Process each color channel
+    # Traitement de chaque canal couleur
     for channel in range(num_channels):
-        print(f"\n[DEBUG] Traitement du canal {channel+1}/{num_channels}...")
-        # Extract pixel values for sampled locations
+        print(f"\n[DEBUG hdr_debevec] Traitement du canal {channel+1}/{num_channels}...")
+        # Extraction des valeurs de pixels pour les emplacements sélectionnés
         Z = np.zeros((num_samples, num_images), dtype=int)
         for j, img in enumerate(images):
             if num_channels == 1:
@@ -172,28 +172,28 @@ def hdr_debevec(
             else:
                 Z[:, j] = img[sample_y, sample_x, channel]
 
-        print(f"[DEBUG] Extraction des valeurs d'échantillons pour le canal {channel+1} terminée.")
+        print(f"[DEBUG hdr_debevec] Extraction des valeurs d'échantillons pour le canal {channel+1} terminée.")
 
-        # Solve for the response curve
-        print(f"[DEBUG] Calcul de la courbe de réponse pour le canal {channel+1}...")
+        # Calcul de la courbe de réponse
+        print(f"[DEBUG hdr_debevec] Calcul de la courbe de réponse pour le canal {channel+1}...")
         g, lE = gsolve(Z, B, lambda_smooth, w)
         response_curves.append(g)
-        print(f"[DEBUG] Courbe de réponse calculée pour le canal {channel+1}.")
+        print(f"[DEBUG hdr_debevec] Courbe de réponse calculée pour le canal {channel+1}.")
 
         if not only_response_curves:
-            # Reconstruct the HDR image for this channel
-            print(f"[DEBUG] Reconstruction de l'image HDR pour le canal {channel+1}...")
+            # Reconstruction de l'image HDR pour ce canal
+            print(f"[DEBUG hdr_debevec] Reconstruction de l'image HDR pour le canal {channel+1}...")
             for y in range(height):
                 if y % max(1, height // 10) == 0:
-                    print(f"[DEBUG]   Canal {channel+1}: {int(100*y/height)}% des lignes traitées...")
+                    print(f"[DEBUG hdr_debevec]   Canal {channel+1}: {int(100*y/height)}% des lignes traitées...")
                 for x in range(width):
-                    # Get pixel values across all exposures
+                    # Récupération des valeurs de pixels pour toutes les expositions
                     if num_channels == 1:
                         pixel_values = np.array([img[y, x] for img in images])
                     else:
                         pixel_values = np.array([img[y, x, channel] for img in images])
 
-                    # Weighted average of log irradiance
+                    # Moyenne pondérée de l'éclairement logarithmique
                     numerator = 0.0
                     denominator = 0.0
                     for j, z in enumerate(pixel_values):
@@ -203,7 +203,7 @@ def hdr_debevec(
 
                     if denominator > 0:
                         hdr_image[y, x, channel] = np.exp(numerator / denominator)
-            print(f"[DEBUG] Canal {channel+1} terminé.")
+            print(f"[DEBUG hdr_debevec] Canal {channel+1} terminé.")
 
     response_curves = np.array(response_curves).squeeze()
     if not only_response_curves:
@@ -217,19 +217,19 @@ def save_hdr(filename: str, hdr_image: np.ndarray) -> None:
     Sauvegarde une image HDR au format Radiance RGBE (.hdr).
     Args:
         filename (str): Nom du fichier de sortie (.hdr).
-        hdr_image (np.ndarray): Carte de radiance HDR.
+        hdr_image (np.ndarray): Carte de luminance HDR.
     Returns:
         None
     """
     import cv2
     
-    # OpenCV expects BGR format, so convert RGB to BGR if needed
+    # OpenCV attend le format BGR, donc conversion RGB vers BGR si besoin
     if len(hdr_image.shape) == 3 and hdr_image.shape[2] == 3:
         hdr_bgr = cv2.cvtColor(hdr_image.astype(np.float32), cv2.COLOR_RGB2BGR)
     else:
         hdr_bgr = hdr_image.astype(np.float32)
     
-    # Save as HDR
+    # Sauvegarde au format HDR
     cv2.imwrite(filename, hdr_bgr)
-    print(f"HDR image saved: {filename}")
+    print(f"Image HDR sauvegardée : {filename}")
 

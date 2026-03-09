@@ -1,34 +1,44 @@
 
 """
-Script fusionné pour la création d'image HDR à partir de séquences PNG ou JPG.
+Script permettant la création d'image HDR à partir de séquences PNG ou JPG.
 Paramètres utilisateurs configurables ci-dessous.
 """
 
 # === PARAMÈTRES UTILISATEUR ===
-# Type d'images à charger : 'png' ou 'jpg'
+# Type d'images à charger :
 MODE = 'png'  # Choisir 'png' ou 'jpg'
 # Calculer uniquement les courbes de réponse (True = plus rapide, pas de HDR)
-ONLY_RESPONSE_CURVES = False
-# Chemin du dossier d'entrée (images)
-IMAGE_FOLDER_PNG = "../../images/reduced/scene_1"
-IMAGE_FOLDER_JPG = "../../images/Images_supop/Scène 1"
-# Chemin de sauvegarde des courbes de réponse
-RESPONSE_CURVE_PATH = 'response_curves.png'
-# Chemin de sauvegarde du fichier HDR
-HDR_OUTPUT_PATH = 'output_hdr.hdr'
+ONLY_RESPONSE_CURVES = True # Choisir True (plus rapide) ou False (calcul complet HDR)
+## Chemin du dossier d'entrée PNG (relatif à la racine du projet)
+IMAGE_FOLDER_PNG = "images/reduced/scene_1"
+## Chemin du dossier d'entrée JPG (relatif à la racine du projet)
+IMAGE_FOLDER_JPG = "images/Images_supop/Scène 1"
+## Chemin de sauvegarde des courbes de réponse (relatif à la racine du projet)
+RESPONSE_CURVE_PATH = "scripts/create_hdr/response_curves.png"
+## Chemin de sauvegarde du fichier HDR (relatif à la racine du projet)
+HDR_OUTPUT_PATH = "scripts/create_hdr/output_hdr.hdr"
+
+# --- Calcul dynamique des chemins absolus à partir de la racine du projet ---
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # racine du projet
+IMAGE_FOLDER_PNG_ABS = PROJECT_ROOT / IMAGE_FOLDER_PNG
+IMAGE_FOLDER_JPG_ABS = PROJECT_ROOT / IMAGE_FOLDER_JPG
+RESPONSE_CURVE_PATH_ABS = PROJECT_ROOT / RESPONSE_CURVE_PATH
+HDR_OUTPUT_PATH_ABS = PROJECT_ROOT / HDR_OUTPUT_PATH
 # Nombre de points à sélectionner pour la courbe de réponse
 NUM_SAMPLES = 20
 # Paramètre de lissage lambda
 LAMBDA_SMOOTH = 50.0
 # =============================
 
+
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
 import imageio.v3 as imageio
 from PIL import Image
 from PIL.ExifTags import TAGS
-from debevec import hdr_debevec, save_hdr
+from scripts.create_hdr.debevec import hdr_debevec, save_hdr
 
 def load_exposure_sequence_png(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
     """
@@ -68,8 +78,8 @@ def load_exposure_sequence_png(image_folder: str | Path) -> tuple[list[np.ndarra
         img = imageio.imread(img_file)
         images.append(img)
     exposure_times = np.array(exposure_times)
-    print(f"Loaded {len(images)} PNG images")
-    print(f"Exposure times: {exposure_times}")
+    print(f"{len(images)} images PNG chargées")
+    print(f"Temps d'exposition : {exposure_times}")
     return images, exposure_times
 
 def load_exposure_sequence_jpg(image_folder: str | Path) -> tuple[list[np.ndarray], np.ndarray]:
@@ -110,8 +120,8 @@ def load_exposure_sequence_jpg(image_folder: str | Path) -> tuple[list[np.ndarra
             print(f"[Erreur] Impossible de lire EXIF pour {img_path}: {e}. Valeur par défaut 1.0s utilisée.")
             exposure_times.append(1.0)
     exposure_times = np.array(exposure_times)
-    print(f"Loaded {len(images)} JPG images")
-    print(f"Exposure times: {exposure_times}")
+    print(f"{len(images)} images JPG chargées")
+    print(f"Temps d'exposition : {exposure_times}")
     return images, exposure_times
 
 def plot_response_curves(response_curves: np.ndarray, save_path: str | None = None) -> None:
@@ -139,7 +149,7 @@ def plot_response_curves(response_curves: np.ndarray, save_path: str | None = No
     plt.legend()
     if save_path:
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Response curve saved to {save_path}")
+        print(f"Courbe de réponse sauvegardée dans {save_path}")
     plt.show()
 
     # Courbe inversée : Z en fonction de g(Z)
@@ -157,28 +167,28 @@ def plot_response_curves(response_curves: np.ndarray, save_path: str | None = No
     plt.grid(True, alpha=0.3)
     plt.legend()
     if save_path:
-        inv_path = save_path.replace('.png', '_inverse.png')
+        inv_path = str(save_path).replace('.png', '_inverse.png')
         plt.savefig(inv_path, dpi=150, bbox_inches='tight')
-        print(f"Inverse response curve saved to {inv_path}")
+        print(f"Courbe de réponse inverse sauvegardée dans {inv_path}")
     plt.show()
 
-def main():
+def create_hdr():
     """
     Fonction principale pour la création d'une image HDR et le tracé des courbes de réponse.
     Returns:
         None
     """
-    print("=== HDR Image Creation using Debevec Algorithm ===\n")
+    print("=== Création d'image HDR avec l'algorithme de Debevec ===\n")
 
     if MODE == 'png':
-        image_folder = IMAGE_FOLDER_PNG
+        image_folder = IMAGE_FOLDER_PNG_ABS
         images, exposure_times = load_exposure_sequence_png(image_folder)
     else:
-        image_folder = IMAGE_FOLDER_JPG
+        image_folder = IMAGE_FOLDER_JPG_ABS
         images, exposure_times = load_exposure_sequence_jpg(image_folder)
 
-    print("\nComputing HDR radiance map and response curves...")
-    print("This may take a few moments...")
+    print("\nCalcul de la carte de luminance HDR et des courbes de réponse...")
+    print("Cela peut prendre du temps...")
     hdr_image, response_curves = hdr_debevec(
         images=images,
         exposure_times=exposure_times,
@@ -187,18 +197,18 @@ def main():
         only_response_curves=ONLY_RESPONSE_CURVES
     )
 
-    print("\nPlotting camera response curves...")
-    plot_response_curves(response_curves, save_path=RESPONSE_CURVE_PATH)
+    print("\nTracé des courbes de réponse de la caméra...")
+    plot_response_curves(response_curves, save_path=RESPONSE_CURVE_PATH_ABS)
 
     if not ONLY_RESPONSE_CURVES:
-        print(f"\nHDR image shape: {hdr_image.shape}")
-        print(f"HDR dynamic range: {hdr_image.min():.6f} to {hdr_image.max():.6f}")
-        print("\nSaving HDR image...")
-        save_hdr(HDR_OUTPUT_PATH, hdr_image)
-        print(f"HDR image saved as: {HDR_OUTPUT_PATH}")
+        print(f"\nDimensions de l'image HDR : {hdr_image.shape}")
+        print(f"Plage dynamique HDR : {hdr_image.min():.6f} à {hdr_image.max():.6f}")
+        print("\nSauvegarde de l'image HDR...")
+        save_hdr(HDR_OUTPUT_PATH_ABS, hdr_image)
+        print(f"Image HDR sauvegardée sous : {HDR_OUTPUT_PATH_ABS}")
     else:
         print("\nAucun fichier HDR n'a été créé (mode courbes de réponse uniquement, calcul HDR ignoré).")
-    print("\n=== Done! ===")
+    print("\n=== Terminé ! ===")
 
 if __name__ == "__main__":
-    main()
+    create_hdr()
