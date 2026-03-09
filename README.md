@@ -36,7 +36,7 @@ Voici les principales étapes pour utiliser ce projet :
 	 - Modifiez les chemins et paramètres en haut du script.
 	 - Lancez la commande :
 		 ```bash
-		 uv run plot_false_color_luminance
+		 uv run create_hdr
 		 ```
 
 4. **Tonemapping (conversion HDR → LDR)**
